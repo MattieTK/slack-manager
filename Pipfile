@@ -1,0 +1,19 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+autopep8 = "*"
+
+[packages]
+slack-client = "*"
+gspread = "*"
+slackclient = "==2.0.0"
+flask = "*"
+flask-oauth = "*"
+python-dotenv = "*"
+dotenv = "*"
+
+[requires]
+python_version = "3.7"
