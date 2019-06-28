@@ -10,6 +10,6 @@ You can then import this CSV into Google Sheets or likewise in order to make any
 You can set new names and archive state currently.
 
 ## To come
-[] Fix setting status
-[] Set topic
-[] Set automatic Google sheets export/Slack oauth
+- [ ] Fix setting status
+- [ ] Set topic
+- [ ] Set automatic Google sheets export/Slack oauth
