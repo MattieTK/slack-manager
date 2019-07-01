@@ -25,7 +25,7 @@ def readChannels():
     writer = csv.writer(file, delimiter=",", quotechar='"',
                         quoting=csv.QUOTE_ALL)
     writer.writerow(['ID', 'Name', 'Purpose', 'Topic',
-                     'Archived', 'New Name', 'To Archive'])
+                     'Archived', 'New Name', 'To Archive', 'New Purpose'])
     for channel in channel_list['channels']:
         chanlist = [channel['id'], channel['name'], channel['purpose']['value'].replace('\n', '\\n'), channel['topic']['value'],
                     channel['is_archived']]
@@ -35,57 +35,72 @@ def readChannels():
 
 def writeChannels():
     print('This will write the channels, are you sure? y/N')
-    prompt = input('')
-    if prompt is not "y":
-        exit()
-    file = open("./output/clean-times.csv", "r")
-    reader = csv.reader(file)
+    start = input('')
+    if start is not "y":
+        return
+    print('Do you want to confirm every action? Y/n')
+    confirm = input('')
+    if confirm is not "n":
+        confirm = True
+    file = open("./output/channels.csv", "r")
+    reader = csv.DictReader(file)
     rownum = 0
     for row in reader:
         if rownum == 0:
             rownum += 1
             continue
-        channelID = row[0]
+        channelID = row['ID']
+        authData = client.auth_test()
         print(row)
         try:
-            if row[5]:
-                print("Renaming %s to %s?" % (row[1], row[5]))
-                # prompt = input('')
-                # if prompt is "y":
-                try:
-                    client.channels_rename(channel=channelID, name=row[5])
-                except slack.errors.SlackApiError:
-                    pass
-        except IndexError:
+            if row['New Name']:
+                print("Renaming %s to %s? (y/N)" % (row['ID'], row['New Name']))
+                if confirmCheck() is "y":
+                    try:
+                        client.channels_rename(channel=channelID, name=row['New Name'])
+                    except slack.errors.SlackApiError:
+                        print(slack.errors.SlackApiError)
+                        pass
+        except KeyError:
             pass
         try:
-            if row[6] == "TRUE":
+            if row['To Archive'] == "TRUE":
                 print("Archiving %s?" %
-                      (row[1]))
+                      (row['ID']))
                 # prompt = input('')
                 # if prompt is "y":
                 try:
                     client.channels_archive(channel=channelID)
                 except slack.errors.SlackApiError:
+                    print(slack.errors.SlackApiError)
                     pass
-        except IndexError:
+        except KeyError:
             pass
-        # This is broken until you can join/part
-        # try:
-        #     if row[7]:
-        #         print("Purpose of channel: %s changing to : %s" %
-        #               (row[2], row[7]))
-        #         # prompt = input('')
-        #         # if prompt is "y":
-        #         try:
-        #             client.channels_setPurpose(
-        #                 channel=channelID, purpose=row[7])
-        #         except slack.errors.SlackApiError:
-        #             pass
-        # except IndexError:
-        #     pass
+        try:
+            if row['New Purpose']:
+                print("Purpose of channel: %s changing to : %s" %
+                      (row['Purpose'], row['New Purpose']))
+                members = client.conversations_members(channel=channelID)
+                if authData['user_id'] not in (members['members']):
+                    part = True
+                    client.conversations_join(channel=channelID)
+                try:
+                    client.channels_setPurpose(
+                        channel=channelID, purpose=row['New Purpose'])
+                except slack.errors.SlackApiError:
+                    print(slack.errors.SlackApiError)
+                    pass
+                if part:
+                    client.conversations_leave(channel=channelID)
+        except KeyError:
+            pass
     file.close()
 
+def confirmCheck(confirm):
+    if confirm == True:
+        print("Confirm? y/N")
+        prompt = input('')
+        return prompt
 
 readChannels()
 writeChannels()
