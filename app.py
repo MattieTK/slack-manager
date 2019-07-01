@@ -51,11 +51,14 @@ def writeChannels():
             continue
         channelID = row['ID']
         authData = client.auth_test()
-        print(row)
+        print('Running on channel %s' % (row['Name']))
+        #
+        # Change Name
+        #
         try:
             if row['New Name']:
-                print("Renaming %s to %s? (y/N)" % (row['ID'], row['New Name']))
-                if confirmCheck() is "y":
+                print("Renaming %s to %s" % (row['Name'], row['New Name']))
+                if confirmCheck(confirm):
                     try:
                         client.channels_rename(channel=channelID, name=row['New Name'])
                     except slack.errors.SlackApiError:
@@ -63,35 +66,63 @@ def writeChannels():
                         pass
         except KeyError:
             pass
+        #
+        # Change Archive state
+        #
         try:
             if row['To Archive'] == "TRUE":
-                print("Archiving %s?" %
+                print("Archiving %s" %
                       (row['ID']))
-                # prompt = input('')
-                # if prompt is "y":
-                try:
-                    client.channels_archive(channel=channelID)
-                except slack.errors.SlackApiError:
-                    print(slack.errors.SlackApiError)
-                    pass
+                if confirmCheck(confirm):
+                    try:
+                        client.channels_archive(channel=channelID)
+                    except slack.errors.SlackApiError:
+                        print(slack.errors.SlackApiError)
+                        pass
         except KeyError:
             pass
+        #
+        # Change Purpose
+        #
         try:
             if row['New Purpose']:
                 print("Purpose of channel: %s changing to : %s" %
                       (row['Purpose'], row['New Purpose']))
-                members = client.conversations_members(channel=channelID)
-                if authData['user_id'] not in (members['members']):
-                    part = True
-                    client.conversations_join(channel=channelID)
-                try:
-                    client.channels_setPurpose(
-                        channel=channelID, purpose=row['New Purpose'])
-                except slack.errors.SlackApiError:
-                    print(slack.errors.SlackApiError)
-                    pass
-                if part:
-                    client.conversations_leave(channel=channelID)
+                if confirmCheck(confirm):
+                    members = client.conversations_members(channel=channelID)
+                    if authData['user_id'] not in (members['members']):
+                        part = True
+                        client.conversations_join(channel=channelID)
+                    try:
+                        client.channels_setPurpose(
+                            channel=channelID, purpose=row['New Purpose'])
+                    except slack.errors.SlackApiError:
+                        print(slack.errors.SlackApiError)
+                        pass
+                    if part:
+                        client.conversations_leave(channel=channelID)
+        except KeyError:
+            pass
+        #
+        # Change Topic
+        #
+        try:
+            if row['New Topic']:
+                print("Topic of channel: %s changing to : %s" %
+                      (row['Topic'], row['New Topic']))
+                if confirmCheck(confirm):
+                    members = client.conversations_members(channel=channelID)
+                    if authData['user_id'] not in (members['members']):
+                        part = True
+                        client.conversations_join(channel=channelID)
+                    try:
+                        client.channels_setTopic(
+                            channel=channelID, topic=row['New Topic'])
+                    except slack.errors.SlackApiError:
+                        print(slack.errors.SlackApiError)
+                        pass
+                    if part:
+                        client.conversations_leave(channel=channelID)
         except KeyError:
             pass
     file.close()
@@ -100,7 +131,10 @@ def confirmCheck(confirm):
     if confirm == True:
         print("Confirm? y/N")
         prompt = input('')
-        return prompt
+        if prompt in {True, 'y', 'Y', 'yes'}:
+            return True
+        else:
+            return False
 
-readChannels()
+# readChannels()
 writeChannels()
