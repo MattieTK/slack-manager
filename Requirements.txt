@@ -28,7 +28,7 @@ pycparser==2.19
 pyOpenSSL==19.0.0
 python-dotenv==0.10.3
 requests==2.22.0
-rsa==4.0
+rsa==4.7
 six==1.12.0
 slack-client==0.3.0
 slackclient==2.0.0
